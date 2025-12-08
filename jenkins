@@ -1,23 +1,30 @@
-sudo usermod ag sudo jenkins
+sudo usermod -aG sudo jenkins
 sudo visudo
-#add below line in sudo section
-jenkins ALL=(ALL) NOPASSWD: ALL
-sudo systemctl restart jenkins.
-sudo chmod -R 777/var/run/docker.sock
-sudo usermod ag docker jenkins
+# add below line in sudo section
+jenkins ALL=(ALL) NOPASSWD:ALL       
+
 sudo systemctl restart jenkins
-sudo usermod ag docker $USER
-newGRP docker
-sudo u jenkins docker login u sheetalsshetty
+
+sudo chmod -R 777 /var/run/docker.sock    
+sudo usermod -aG docker jenkins
+sudo systemctl restart jenkins
+sudo usermod -aG docker $USER
+newgrp docker
+sudo -u jenkins docker login -u sheetalsshetty
 <Paste Personal access token>
-#In Jenkins -> settings -> System
+
+# In Jenkins -> Settings -> System
 Docker URL = unix:///var/run/docker.sock
-sudo nano/lib/systemd/system/docker.service
-#Comment existing ExecStart line and add below line
-ExecStart=/usr/bin/dockerd H unix:///var/run/docker.sock -H tcp://0.0.0.0:2375
+
+sudo nano /lib/systemd/system/docker.service
+
+# Comment existing ExecStart line and add below line
+ExecStart=/usr/bin/dockerd -H unix:///var/run/docker.sock -H tcp://0.0.0.0:2375    
+
 sudo systemctl daemon-reload
 sudo systemctl daemon-reexec
 sudo systemctl restart docker
+
 
 
 sudo chown -R jenkins:jenkins /var/www/html
