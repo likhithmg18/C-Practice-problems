@@ -1,0 +1,19 @@
+https://github.com/sthuthi2002
+https://github.com/prashasth2002naik
+
+
+
+tomcat installation steps link
+http://docs.vultr.com/how-to-install-apache-tomcat-on-ubuntu-24-04#secure-apache-tomcat-with-trusted-ssl-certificates
+
+
+TOMCAT
+in Create Apache Tomcat Users
+<role rolename="manager-gui" />
+<user username="manager" password="manager_password" roles="manager-gui" />
+
+<role rolename="admin-gui" />
+<user username="admin" password="admin_password" roles="manager-gui,admin-gui" />
+
+<role rolename="manager-script" />
+<user username="msis" password="msis" roles="manager-gui,admin-gui,manager-script" />
