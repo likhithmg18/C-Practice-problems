@@ -80,6 +80,58 @@ Run on any slave
 df -h | grep nfs
 
 
+TOMCAT steps
+
+✅ 1. Download Tomcat 9.0.112 (VALID URL)
+cd /tmp
+wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.112/bin/apache-tomcat-9.0.112.tar.gz
+
+
+Archive URL is never 404, so this will work.
+
+✅ 2. Extract the file
+tar -xzf apache-tomcat-9.0.112.tar.gz
+
+✅ 3. Move Tomcat to /opt/tomcat9
+sudo mv apache-tomcat-9.0.112 /opt/tomcat9
+
+✅ 4. Give execute permission
+sudo chmod +x /opt/tomcat9/bin/*.sh
+
+✅ 5. Start Tomcat
+/opt/tomcat9/bin/startup.sh
+
+
+You should see:
+
+Tomcat started.
+
+✅ 6. Change port to 8081 (since Jenkins uses 8080)
+
+Open the config file:
+
+sudo nano /opt/tomcat9/conf/server.xml
+
+
+Find:
+
+<Connector port="8080">
+
+
+Change to:
+
+<Connector port="8081">
+
+
+Save → exit.
+
+Restart Tomcat:
+
+/opt/tomcat9/bin/shutdown.sh
+/opt/tomcat9/bin/startup.sh
+
+🌐 Access Tomcat
+http://localhost:8081
 3. Web services
 
 //install JDK
