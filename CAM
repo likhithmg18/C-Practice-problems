@@ -1,0 +1,224 @@
+NFS TRUENAS
+sudo mkdir /mnt/NFS/likhi
+sudo mount -t nfs -o nfsvers=4 <truenasip>:/mnt/pool1 /mnt/NFS/likhi
+
+
+
+
+01. Achieving passwordless SSH connection to master and slave nodes
+
+*Master and slave nodes are identified and IP's are re-named accordingly.
+  172.18.181.65 master
+  172.18.181.61 slave1
+  172.18.181.53 slave2
+
+172.18.181.65 msis.kubenode1.com
+172.18.181.61 msis.kubemaster.com
+172.18.181.53 msis.kubenode2.com
+
+*Generating RSA key on master
+ >> ssh-keygen -t rsa -b 4096
+ >> ssh-copy-id user@slave1
+ >> ssh-copy-id user@slave2
+Copies your public key (~/.ssh/id_rsa.pub) to the slave's ~/.ssh/authorized_keys.
+
+//
+*Making sure that the SSH agent is running and the key is loaded
+ eval "$(ssh-agent -s)" --> Starts the agent
+ ssh-add ~/.ssh/id_rsa --> Adding private key to the agent
+
+*Giving the necessary permissions
+ chmod 600 ~/.ssh/id_rsa --> Private RSA key(Only accessible by owner)
+ chmod 644 ~/.ssh/id_rsa.pub --> Public RSA key(Shared to slaves ~/.ssh/authorized_keys)
+
+*RSA summarized steps
+ ssh-keygen	          Creates your RSA key pair files
+ eval "$(ssh-agent -s)"	  Starts the SSH agent process
+ ssh-add ~/.ssh/id_rsa	  Loads your private key into agent
+
+*Use ssh-copy-id to push the public key to slave nodes
+ ssh-copy-id msis@slave1
+ ssh-copy-id msis@slave2
+Here msis is the usernames in slave1 and slave2.
+
+*Now SSH passwordless connection can be checked. 
+
+\\
+
+
+2. NFS setup
+
+1. Install NFS Packages on all nodes (master and slaves)
+sudo apt update
+>>sudo apt install nfs-kernel-server nfs-common -y (on master)
+
+2.Create a Shared Directory on master
+sudo mkdir -p /nfs/shared
+sudo chmod 777 /nfs/shared
+
+3.Configure NFS Exports
+Edit the NFS exports file on the master
+>> sudo nano /etc/exports
+/nfs/shared 172.18.181.61(rw,sync,no_subtree_check)
+/nfs/shared 172.18.181.53(rw,sync,no_subtree_check)
+
+4. Export the Shared Directory
+>> sudo exportfs -a
+>> sudo systemctl restart nfs-kernel-server
+>> sudo exportfs -v
+
+5. Mount the NFS Share on Slave Nodes
+On slave1
+>> sudo mkdir -p /nfs/shared
+>> sudo mount 172.18.181.65{master}:/nfs/shared /nfs/shared
+On slave2
+sudo mkdir -p /nfs/shared
+sudo mount 172.18.181.65:/nfs/shared /nfs/shared
+
+6. Verify the Mount
+Run on any slave
+df -h | grep nfs
+
+
+3. Web services
+
+//install JDK
+
+sudo apt update
+sudo apt install openjdk-8-jdk
+
+//Install IntelliJ IDEA Ultimate
+sudo snap install intellij-idea-ultimate --classic
+
+//OPEN intellij IDEA
+intellij-idea-ultimate
+
+//if we get tomcat.service: Failed with result 'exit-code' then
+sudo nano /etc/systemd/system/tomcat.service
+and then add this line
+Environment=JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+
+//if you get to disable input methopds, click on it. 
+
+create new project give random name.
+
+//Check if Tomcat is available or not 
+sudo systemctl status tomcat //this should show status active, to exit from that. enter ctr+c
+
+//setting up tomcat in intellij
+go to file->settings->build,execution, deployment
+
+you get options like application servers. click on it. Click '+' and select 'Tomcat server' in the Tomcat home --- enter the path of tomcat "/opt/tomcat". 
+if it shows error/warning that 'tomcat home folder is not valid or similar', got to terminal, and change access to tomcat using,
+
+sudo chmod -R a+rX /opt/tomcat9
+
+//create a web application
+
+File-> New project -> (on the left side select Java Enterprise or Jarkata EE) under template select Web application , project name "calculator", App server -> Tomcat and create project.
+
+inside calculator->src->main->java->com.example.calculator, create new java class named OperatorService and add below code
+
+package com.example.calculator;
+
+import java.util.List;
+import javax.jws.WebMethod;
+import javax.jws.WebService;
+
+@WebService
+public class OperatorService {
+
+  @WebMethod
+  public int add(int a, int b) { return a + b; }
+
+  @WebMethod
+  public int sub(int a, int b) { return a - b; }
+
+  @WebMethod
+  public int mul(int a, int b) { return a * b; }
+
+  @WebMethod
+  public int div(int a, int b) { return a / b; }
+
+}
+
+inside calculator->src->main->java->com.example.calculator, create new java class named OperatorPublisher and add below code
+
+package com.example.calculator;
+
+import javax.xml.ws.Endpoint;
+
+public class OperatorPublisher {
+  public static void main(String[] args) {
+    String url = "http://localhost:8085/calculator";
+    Endpoint.publish(url, new OperatorService());
+    System.out.println("Service started at: " + url + "?wsdl");
+  }
+}
+
+
+in the File->Project Structure, click modules(on left side), under sources->language level it should be 8 - Lambdas, type annotations, etc. and under dependencies, Module SDK Should be Project SDK 1.8
+
+Also, under File->Settings->Build, Execution, DEployment -> compiler-> Java compiler, in Per-module bytecode version, select your module(for e.g calculator) and Target byte code should be 8
+
+Also, under File->Settings->Build, Execution, DEployment -> compiler-> Java compiler, under Build Tools-> Maven-> Runner, JRE should be Java 1.8
+
+now, got to pom.xml (it's below target in the left navigation), make sure that, 
+
+<properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <junit.version>5.13.2</junit.version>
+</properties> 
+
+<dependency>
+    <groupId>jakarta.servlet</groupId>
+    <artifactId>jakarta.servlet-api</artifactId>
+    <version>4.0.4</version>
+    <scope>provided</scope>
+</dependency>
+
+are as above (check version)
+
+now right click to pom.xml and maven-> sync project.
+
+if HelloServlet.java is showing errors, make jarkata to javax in that file.
+
+now, build->rebuild project and run OperatorPublisher.
+
+you can access the page at  http://localhost:8085/calculator?wsdl
+
+//setting up client
+
+create new project(don't select Java Enterprise/ Jarkata JE), create normal Java project with name client and open it in new window.(don't terminate previous session)
+
+OPen new terminal and cd to IdeaProjects/client/src/ and run below command 
+
+wsimport -keep -p com.example.client http://localhost:8080/calculator?wsdl
+This generates proxy classes in com.example.client.
+
+
+create a file named TestOperatorClient  under com.example.client. and add below code
+
+package com.example.client;
+
+public class TestOperatorClient {
+  public static void main(String[] args) {
+    OperatorServiceService service = new OperatorServiceService();
+    OperatorService port = service.getOperatorServicePort();
+
+    System.out.println("Add: " + port.add(10, 5));
+    System.out.println("Sub: " + port.sub(10, 5));
+    System.out.println("Mul: " + port.mul(10, 5));
+    System.out.println("Div: " + port.div(10, 5));
+  }
+}
+
+run the file, you get the output as
+
+Add: 15
+Sub: 5
+Mul: 50
+Div: 2
