@@ -14,8 +14,8 @@ elastic beanstack -found(m6)
 lb and auto scaling group found(m10)
 efs arch(m5)
 monoletic nodejs arch(m14)
-iac arc(m11)
-automating infrastructure deployment (pipeline)arc(m11)
+iac arc(m11)guided
+automating infrastructure deployment (pipeline)arc(m11)challenge
 ->aws cloudformation validate-template --template-body file://s3.yaml
 ->aws cloudformation validate-template --template-body file://cafe-network.yaml
 scalable and highly available environment for cafe arch(m10)challenge
