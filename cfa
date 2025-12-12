@@ -52,3 +52,17 @@ sudo systemctl stop mariadb.service
 
 
 
+
+
+chmod 600 labsusers.pem
+scp -i labsusers.pem labsusers.pem ubuntu@publicip:/home/ubuntu/.
+sudo -i <pemkey> ubuntu@publicip
+sudo apt-get update -y
+sudo apt-get install apache2 php libapache2-mod-php php-mysql mysql-server mysql-client -y
+sudo systemctl restart apache2
+sudo nano /etc/apache2/sites_available/000-default.conf
+create user 'msis'@'localhost or %' identified by 'password'
+grant all privileges on <databasename>.* to 'msis'@'ip';
+source create-db.sql;
+
+
