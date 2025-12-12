@@ -68,3 +68,20 @@ source create-db.sql;
 
 sudo systemctl restar mysql;
 from public ubuntu inside mompopdb sudo mqsql -h <privateip> -u msis -p
+
+
+
+
+
+
+EBS
+sudo mkfs -t ext3 /dev/xvdf
+sudo mkdir /mnt/myvolume
+sudo mount /dev/xvdf /mnt/myvolume
+df -h
+cd /mnt/myvolume
+sudo chown -R ec2-user:ec2-user.
+cat >> file.txt
+->write something
+
+
