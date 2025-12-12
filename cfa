@@ -1,0 +1,33 @@
+s3-arc(m-4)
+dynamic ec2- arc(m-5)
+vpc foun(m-5)
+
+
+
+
+
+
+
+RDS
+session manager
+sudo su
+su ec2-user
+  cd cafe
+mysql -h endpoint -u admin -p
+  create database cafe_db
+use cafe_db;
+exit
+cd
+now you have to be in ec2-user
+  mysql-dump --datbases cafe_db -u root -p > cafe.sql
+  mysql -h endpoint -u admin -p
+  use cafe_db;
+source cafe.sql;
+show tables;
+exit
+change all password,username,url
+sudo systemctl stop mariadb.service
+  sudo systemctl restart httpd
+
+
+
