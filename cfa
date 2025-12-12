@@ -15,6 +15,8 @@ efs arch(m5)
 monoletic nodejs arch(m14)
 iac arc(m11)
 automating infrastructure deployment (pipeline)arc(m11)
+->aws cloudformation validate-template --template-body file://s3.yaml
+->aws cloudformation validate-template --template-body file://cafe-network.yaml
 scalable and highly available environment for cafe arch(m10)challenge
 ->sudo su ec2-user
 ->3commands of guidelab
