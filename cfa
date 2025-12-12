@@ -1,6 +1,22 @@
 s3-arc(m-4)
 dynamic ec2- arc(m-5)
 vpc foun(m-5)
+iam foun(m-4)
+RDS arc(m6)
+amazon ec2 user data found(m-6)
+ebs volume foun(m-7)
+lambda inventory management (serverless architecture) arch(m14)
+elastic beanstack -found(m6)
+lb and auto scaling group found(m10)
+efs arch(m5)
+monoletic nodejs arch(m14)
+iac arc(m11)
+automating infrastructure deployment (pipeline)arc(m11)
+scalable and highly available environment for cafe arch(m10)challenge
+->sudo su ec2-user
+->3commands of guidelab
+
+
 
 
 
