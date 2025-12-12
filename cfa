@@ -67,3 +67,4 @@ grant all privileges on <databasename>.* to 'msis'@'ip';
 source create-db.sql;
 
 sudo systemctl restar mysql;
+from public ubuntu inside mompopdb sudo mqsql -h <privateip> -u msis -p
