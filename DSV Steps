@@ -1,0 +1,19 @@
+start-dfs.sh && start-yarn.sh
+hdfs dfs -mkdir /likhith
+hdfs dfs -ls /
+ go to browser localhost:9870
+
+sudo nano sample.txt
+hdfs dfs -put sourcefile(sample.txt) destination(/likhith)
+optional - hdfs dfs -get /likhith/sample.txt /home/sois(localpath)
+hdfs dfs -mkdir /likhith/output
+
+open eclipse and create new project and paste the code in build path add 2 external jar and remove all the red line by adding the import
+next right click on project and export it
+
+Terminal 
+cd eclipse-workspace
+ls(check that jar file is present or not)
+ hadoop jar (Enterjarfilename) testwordcount.testwordcount /likhith/sample.txt /likhith/output/out
+
+now check the hadoop file it is reflected their
