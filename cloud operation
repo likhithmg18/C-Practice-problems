@@ -1,0 +1,540 @@
+Cloud Operations
+1. Café business Client requires a solution for hosting static website as they wish to
+promote café products to their customers.
+Task 1: Connect to an Amazon Linux EC2 instance by using SSH
+MacOS/Linux – Connect Using SSH
+ Choose the Details drop down and then choose Show a credentials window will open
+ Choose the Download PEM button and save the labsuser.pem file.
+ Open a terminal window and change directory cd to the directory where the
+labsuser.pem file was downloaded.
+ cd ~/Downloads
+ Change the permissions on the key.
+ chmod 600 labsuser.pem
+ Go to AWS Management Console, and in the EC2 service, choose Instances, Select
+the instances that you want to connect to.
+ Copy the IPV4 public IP value
+ Return to the terminal window and connect to instance via SSH
+ ssh -i labsuser.pem ec2-user@<public-ip>
+replace <public-ip> with the actual public IP address you copied).
+Task 2: Configure the AWS CLI
+ Update the AWS CLI software with the credentials
+aws configure
+ At the prompts enter the following information
+I. AWS Access key ID: Select the Details drop down menu and choose Show.
+Copy the AccessKey value.
+II. AWS Secret Access Key: Copy and paste the SecretKey value from the same
+Credentials screen.
+III. Default region name: us-east-1
+IV. Default output format: json
+Task 3: Create an S3 bucket by using the AWS CLI
+ Use the aws s3api create-bucket command to create a bucket in Amazon S3.
+ Choose a Unique Bucket Name
+ Specify region because you want to host the website in the AWS Region
+aws s3api create-bucket \
+--bucket <your-unique-bucket-name> \
+--region us-east-1\
+--create-bucket-configuration LocationConstraint=us-east-1
+ If the command is successful, you will get a JSON-formatted response.
+Task 4: Analyse details of an IAM user that has full access to Amazon S3
+ In the AWS Management Console, Type IAM and choose IAM service.
+ In the left Navigation pane, choose users and the choose awsS3user.
+ Choose the permissions tab, expand the policy named lab_S3policy and click {}
+JSON to view the policy details.
+ The policy contains two statements
+I. Allows full access to Amazon S3
+II. Uses wildcard s3: *, meaning all S3 actions are allowed
+ The second statements deny some specific S3 object-related actions
+ Choose the Security credentials tab, Notice an existing Access Key
+ In the Security Credentials tab, Copy the Console sign-in link
+ Open a Private Browser Window
+ Paste the Console sign-in URL into the new browser window and sign in as IAM user.
+ In the console choose Services, select Amazon EC2
+ You will see multiple API Error message, this is expected because IAM user does not
+have EC2 permissions.
+ Choose Services, Select Amazon S3
+ S3 console loads without errors, you can see the bucket you created earlier, This
+confirms the IAM policy grants S3 access.
+Task 5: Extract the files that you need for this activity
+ In the SSH terminal, extract the files
+cd ~/sysops-activity-files tar xvzf static-website.tar.gz
+ Run the ls command, you will see an index.html file and directories named css and
+images.
+ Delete the tar.gz file using rm command but leave the extracted files.
+Task 6: Update bucket controls/Upload files to Amazon S3 by using the AWS CLI
+ Configure Object Ownership
+ aws s3api put-bucket-ownership-controls \
+ --bucket <my-bucket> \
+ --ownership-controls "Rules=[{ObjectOwnership=BucketOwnerPreferred}]"
+ Disable Public Access Restrictions
+ aws s3api put-public-access-block \
+ --bucket <my-bucket> \
+ --public-access-block-configuration
+"BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictP
+ublicBuckets=false"
+ Configure Website Hosting
+ aws s3 website s3://<my-bucket>/ --index-document index.html
+ Upload files to the Bucket
+ aws s3 cp . s3://<my-bucket>/ --recursive --acl public-read
+ Verify Upload: aws s3 ls <my-bucket>
+ Verify Website in AWS Console
+I. Go to the Amazon Web Services Management Console
+II. Open Amazon s3
+III. Select your bucket
+IV. Choose the Properties tab
+V. Scroll to the Static website hosting section
+VI. Confirm that hosting is Enables
+VII. Click the Bucket website endpoint link
+
+Task 7: Create a batch file to make updating the website easily repeatable
+ Navigate to Home Directory: cd
+ Create an Empty Script File: Touch update-website.sh
+Open the File in nano editor: Nano update-website.sh
+ Add Script Content
+#!/bin/bash
+Aws s3 cp ~/sysops-activity-files/s3://<my-bucket>/ --recursive –acl public read
+ Make the Script Executable: chmod +x update-website.sh
+Open the index.html: nano sysops-activity-files/index.html
+ Change the first bgcolor =”aquamarine” to bgcolor =”gainsboro”
+ Change the bgcolor = “orange” to bgcolor = “aquamarine”
+ Locate the second line that has the HTML code bgcolor = “aquamarine” and change it
+to bgcolor=”gainsboro”
+ Run the batch file: ./update-website.sh
+ Open browser and refresh the mom and pop café webpage to see the changes to the
+website.
+2. Café business Client requires a solution for hosting dynamic website as their users can
+pre-order café products. As a cloud operation engineer provide a solution for
+implementing the business needs.
+Task 1: Connect to an Amazon Linux EC2 instance by using SSH
+MacOS/Linux – Connect Using SSH
+ Choose the Details drop down and then choose Show a credentials window will open
+ Choose the Download PEM button and save the labsuser.pem file.
+ Open a terminal window and change directory cd to the directory where the
+labsuser.pem file was downloaded.
+ cd ~/Downloads
+ Change the permissions on the key.
+ chmod 600 labsuser.pem
+ Go to AWS Management Console, and in the EC2 service, choose Instances, Select
+the instances that you want to connect to.
+ Copy the IPV4 public IP value
+ Return to the terminal window and connect to instance via SSH
+ ssh -i labsuser.pem ec2-user@<public-ip>
+replace <public-ip> with the actual public IP address you copied).
+ Task 2: Configure the AWS CLI
+ Update the AWS CLI software with the credentials
+aws configure
+ At the prompts enter the following information
+V. AWS Access key ID: Select the Details drop down menu and choose Show.
+Copy the AccessKey value.
+VI. AWS Secret Access Key: Copy and paste the SecretKey value from the same
+Credentials screen.
+VII. Default region name: us-east-1
+VIII. Default output format: json
+ Task 3: Create an EC2 instance by using the AWS CLI
+ Navigate to the Script Directory: cd ~/sysops-activity-files/starters
+ Create a Backup of the Script: cp create-lamp-instance.sh create-lampinstance.backup
+ Open the create-lamp-instance.sh in text editor: nano create-lamp-instance.sh
+ Analyze the contents of the script
+i. Line1- #!/bin/bash This is a bash file
+ii. Lines 7-11: The instance size is set to t2.small
+iii. Lines 16-29: The script invokes the AWS CLI describe-regions command to
+get a list of all AWS regions. It searches each region for a VPC named
+MomPopCafe VPC. When it finds it captures the vpc ID, captures the region
+and exits the loop.
+iv. Lines 31-57: The script invokes AWS CLI commands to look up the subnet
+ID, Keypair name, and AMI ID values that will be needed to create an
+instance.
+v. Lines 59-124: Cleanup section, before creating resources, the script checks for
+existing ones like EC2 instance named mompopcafe server and SG named
+mompopcafe SG. If found prompts to delete them.
+vi. Lines 126-154: The script creates a new security group with ports 22 and 80
+open.
+vii. Lines 156-168: The script creates a new EC2 instance.
+viii. Lines 179-188: Extracts the instance Id from the instance details, runs a loop
+10 seconds for a public IP. Once assigned displays the public IP address
+ View the user-Data Script: cat create-lamp-instance-userdata.txt
+ Run the script: ./create-lamp-instance.sh
+Task 4: Troubleshoot issues
+ Issue 1: The terminal output states an error InvalidSubnetID.NotFound
+ Fix: Verify resources like AMI ID or subnet exist in every region the rerun the
+script.
+ Issue 2: SSH Permission Denied
+ Fix: Ensure the correct username, ensure if file permissions on the key pair file set
+correctly. Reconnect to the instance.
+ Issue 3: Website not loading
+ Fix:
+i. verify web server running - sudo systemctl status httpd
+ii. If not running, then – sudo systemctl start httpd
+iii. Install Nmap which is port scanning tool– sudo yum install -y nmap
+iv. To scan ports – nmap -Pn <public-ip>
+v. The results that are returned by this command show which ports are
+accessible – 22/tcp open, 80/tcp open.
+ Verify webpage: open browser and type http://<public-ip>
+ Expected message: Hello from your web server
+ Verify User-Data Script Execution: sudo tail -f /var/log/cloud-init-output.log
+ Task 5: Verify the functionality of the new website
+ Load http://<public-ip>/mompopcafe in the web browser, the improved
+Mompopcafe website loads successfully
+ Test the Menu Page: select quantities for dessert items and submit an order. The
+order confirmation page displays an items list.
+
+(648) YouTube Google Gemini Activity 3 - Troubleshoot Cre Console Home | Console Hon 0 Mom & Pop Café Menu
+A Not Secure 13.220.5.191/mompopcafe/menu.php
+PREP SQL New Tab MGmail YouTube Translate ChatGPT ProjectReport.docxх
+Mom & Pop Café
+Home Menu Order History
+Pastries
+Croissant
+$1.50
+Fresh, buttery and fluffy... Simply
+delicious!
+Quantity: 0
+Donut
+$1.00
+We have more than half-a-dozen
+flavors!
+Quantity: 0
+Chocolate Chip Cookie
+$2.50
+Made with Swiss chocolate with a
+touch of Madagascar vanilla
+Quantity: 0
+Muffin
+$3.00
+Banana bread, blueberry, cranberry
+or apple
+Quantity: 0
+Strawberry Blueberry Tart
+$3.50
+Bursting with the taste and aroma of
+fresh fruit Quantity: 0
+Strawberry Tart
+$3.50
+Made with fresh ripe strawberries
+and a delicious whipped cream
+Quantity: 0
+All Bookmarks
+3. Café business client wishes to have an isolated networking space for provisioning services
+and infrastructure for his banking dynamic application. Client also wishes to deploy front-end
+of his application open to public and needs a private and secure environment for his database
+layer. Based on the requirements, VPC is created with public subnets hosting web server and
+private subnets with database servers.
+Task 1: Connect to the CLI Host EC2 instance by using SSH
+MacOS/Linux – Connect Using SSH
+ Choose the Details drop down and then choose Show a credentials window will open
+ Choose the Download PEM button and save the labsuser.pem file.
+ Open a terminal window and change directory cd to the directory where the
+labsuser.pem file was downloaded.
+ cd ~/Downloads
+ Change the permissions on the key.
+ chmod 600 labsuser.pem
+ Go to lab instructions, click Details, select Show from the dropdown menu, locate the
+field labeled CliHostIP and copy the IPV4 Public IP address.
+ Return to the terminal window and connect to instance via SSH
+ ssh -i labsuser.pem ec2-user@<public-ip>
+replace <public-ip> with the actual public IP address you copied).
+Task 2: Configure the AWS CLI
+ Discover the region in which the CLI Host instance is running
+ curl http://169.254.169.254/latest/dynamic/instance-identity/document | grep region
+ Update the AWS CLI software with the credentials
+aws configure
+ At the prompts enter the following information
+IX. AWS Access key ID: Select the Details drop down menu and choose Show.
+Copy the AccessKey value.
+X. AWS Secret Access Key: Copy and paste the SecretKey value from the same
+Credentials screen.
+XI. Default region name: us-east-1
+XII. Default output format: json
+Task 3: Enable VPC Flow Logs
+ Create the S3 bucket that will hold the flow logs
+aws s3api create-bucket –bucket flowlog#### --region<region> --create-bucketcongiguration LocationConstraint=<region>
+ replace #### with four random numbers
+ <region> with the region where your EC2 instances were created
+ Get VPC ID for VPC1
+aws ec2 describe-vpcs --query
+'Vpcs[*].[VpcId,Tags[?Key==`Name`].Value,CidrBlock]' --filters
+"Name=tag:Name,Values='VPC1'"
+ Enable VPC Flow logs on VPC1
+aws ec2 create-flow-logs --resource-type VPC --resource-ids <vpc-id> --traffictype ALL --log-destination-type s3 --log-destination arn:aws:s3:::<flowlog####>
+ Replace <vpc-id> with the actual VPC ID of VPC1
+ <flowlog####> with your actual S3 bucket name
+ If the command runs successfully, you should see that a FlowLogId and ClientToken
+are returned
+ Confirm the Flow Log was created
+ aws ec2 describe-flow-logs
+ Verify that output should show a single flow log was created with a FlowLogStatus of
+ACTIVE and log destination points to S3 bucket.
+Task 4: Analyze and troubleshoot access to resources
+ Copy the Web Server Public IP address from the lab instructions
+ Test web Access – open a new browser tab and paste the WebServerIP, the page fails
+to load with ERR_CONNECTION_TIMED_OUT
+ In the terminal verify instance details
+aws ec2 describe-instances --filter "Name=ip-address,Values='<WebServerIP>'"
+ Filter relevant details like State of the instance, the private IP address, the instance ID,
+the security group, subnet ID and key pair name.
+aws ec2 describe-instances --filter "Name=ip-address,Values='<WebServerIP>'" --
+query
+'Reservations[*].Instances[*].[State,PrivateIpAddress,InstanceId,SecurityGroups,S
+ubnetId,KeyName]'
+ To test SSH connectivity disconnect from CLI host by entering exit
+ macOS and Linux users
+ ssh -i labsuser.pem ec2-user@<WebServerIP> -o ConnectTimeout=10
+ Try establishing SSH connection with 15-second timeout, it fails again.
+ Re-establish the SSH connection to the CLI Host instance
+ ssh -i labsuser.pem ec2-user@CliHostIP
+ Troubleshooting Challenge 1: Web Access Issue
+i. Problem: Instance is running However cannot load the web page and also
+cannot use SSH to connect to the web server instance.
+ii. Hint:
+A. Check open ports using nmap. To do this first install the utility on the
+CLI Host - sudo yum install -y nmap then run nmap <WebServerIP> if
+no ports are open, something is blocking traffic.
+B. Check the security group by running command aws ec2 describesecurity-groups Verify inbound rules like HTTP (port 80) and SSH
+(port 22).
+C. Check Route Table
+aws ec2 describe-route-tables --filter "Name=association.subnetid,Values='<VPC1PubSubnetID>'",
+verify public subnet has route Destination: 0.0.0.0/0 and Target as
+Internet Gateway. If missing, create route
+aws ec2 create-route --route-table-id <route-table-id> --destinationcidr-block 0.0.0.0/0 --gateway-id <igw-id>
+ Refresh browser page should display “Hello from your web server” append
+/mompopcafe/ to the end of the URL, you should see the café website.
+ Troubleshooting Challenge 2: SSH still not working
+i. Problem: Web access works now but SSH still times out
+ii. Hint:
+A. Re-establish the SSH connection to the CLI Host instance
+B. Check the network ACL
+aws ec2 describe-network-acls --filter "Name=association.subnetid,Values='VPC1PublicSubnetID'" --query
+'NetworkAcls[*].[NetworkAclId,Entries]'
+ look for deny rules blocking port 22
+C. Remove Blocking Rule if found
+aws ec2 delete-network-acl-entry --network-acl-id <acl-id> --rulenumber <rule-number> --egress
+D. Test SSH Again
+ssh -i labsuser.pem ec2-user@<WebServerIP> -o
+ConnectTimeout=10
+E. If successful, run hostname command it should indicate web-server
+as the hostname.
+Task 5: Analyze flow logs
+Step 1: Download and Extract Flow Logs
+ Reconnect to the CLI Host EC2 instance
+ Create a local directory on the CLI Host
+ mkdir flowlogs
+ Change the directory to the new directory
+ cd flowlogs
+ List the S3 buckets
+ aws s3 ls
+ Download the flow logs
+ aws s3 cp s3://<flowlog####>/ . –recursive
+ Navigate to Log File Location
+ cd <folder-name>
+ ls
+ repeat this until you reach
+ AWSLogs/<account-id>/vpcflowlogs/<region>/yyyy/mm/dd
+ Extract the log files
+ gunzip *.gz
+Step 2: View Log Structure
+ Copy one log file name and run - head <filename>
+ Search for rejected traffic – grep -rn REJECT
+ Count Rejected Records - grep -rn REJECT . | wc -l
+ Filter for SSH Port - grep -rn ' 22 ' . | grep REJECT
+ Find your Public IP Address
+ Log in to the AWS Management Console
+ Go to EC2
+ Choose Security Groups
+ Select WebSecurityGroup
+ Go to Inbound tab, choose to edit, then choose Add Rule
+ For Source, select My IP
+ Copy the populated IP address
+ Filter Logs by your Public IP - grep -rn ' 22 ' . | grep REJECT | grep <ip-address>
+ Verify Network Interface ID
+aws ec2 describe-network-interfaces --filters "Name=association.publicip,Values='<WebServerIP>'" --query
+'NetworkInterfaces[*].[NetworkInterfaceId,Association.PublicIp]'
+4. Given a cafe business application deployed on a web server configured to generate
+access and error logs, and the requirement for the cafe business client to monitor
+application and web server metrics, how would you design a monitoring and alerting
+system? Specifically, outline the steps you would take to ensure timely alerts to
+administrators when the application becomes unreachable to clients. Additionally,
+detail your approach to automatically backing up the EBS volume of the web server to
+take a snapshot in the event the web server transitions from a running state to a
+stopped state.
+o Use AWS Systems Manager Run Command to install the CloudWatch Agent on
+Amazon EC2 instances
+o Monitor Application Logs using CloudWatch Agent and CloudWatch Logs
+o Monitor system metrics using CloudWatch Agent and CloudWatch Metrics
+o Create real-time notifications using CloudWatch Events
+o Track infrastructure compliance using AWS Config
+Task 1: Install the CloudWatch Agent
+ The CloudWatch Agent can be used to collect metrics from Amazon EC2 instances
+an on-premises servers.
+ Here we use AWS Systems Manager to install the CloudWatch Agent on an
+Amazon EC2 instance. You will configure it to collect both application and system
+metrics.
+Task 2: Monitor Application Logs using CloudWatch Logs
+ Amazon CloudWatch Logs to monitor applications and systems using log data. For
+example, CloudWatch Logs can track the number of errors that occur in your
+application logs and send you a notification whenever the rate of errors exceeds a
+threshold you specify.
+ Open the CloudWatch console.
+ In the left navigation pane, expand Logs, choose Log groups.
+You should see two logs listed: HttpAccessLog and HttpErrorLog.
+ Choose HttpAccessLog
+ Choose the value (instance-id) displayed under Logs Streams.
+ Log data should be displayed, consisting of GET requests that were sent to the
+web server.
+Create a Metric Filter in CloudWatch Logs
+ Filter to identify 404 Errors in the log file. This would normally be an indication
+that the web server is generating invalid links that users are clicking.
+ A filter pattern defines the fields in the log file and filters the data for specific
+values:
+[ip, id, user, timestamp, request, status_code=404, size]
+This tells CloudWatch Logs how to interpret the fields in the log data and defines
+a filter to only find lines with status_code=404, which indicates that a page was
+not found.
+Create an Alarm using the Filter
+You will now configure an Alarm to send a notification when too many 404 Not Found
+errors are received.
+ Next to Metric filters, choose Create alarm configure
+o For Notification, configure Send a notification to the following SNS topic:
+Create new topic
+o Email endpoints that will receive the notification: Enter an email address
+that you can access from the classroom
+ Choose Create alarm
+ Go to your email, look for a confirmation message and select the Confirm
+subscription link.
+ Choose All Alarms
+ You will now access the web server to generate log data.
+ Return to the web browser tab with the web server.
+ Wait 1-2 minutes for the Alarm to trigger. You can occasionally choose Refresh to
+update the status.
+ The graph shown on the CloudWatch page should turn red to indicate that it is in
+the ALARM state.
+ Check your email. You should have received an email titled ALARM: "404 Errors".
+Task 3: Monitor Instance Metrics using CloudWatch
+ Metrics are data about the performance of your systems. Amazon CloudWatch
+stores metrics for AWS services you use.
+ select CloudWatch choose All metrics.
+The lower half of the page will display the various metrics that have been collected by
+CloudWatch. Some are automatically generated by AWS while others were collected
+by the CloudWatch Agent.
+ Choose CWAgent, then device, fstype, host, path.
+Task 4: Create Real-Time Notifications
+ Amazon CloudWatch Events delivers a near real-time stream of system events that
+describe changes in AWS resources.
+ CloudWatch Events responds to these operational changes and takes corrective
+action as necessary, by sending messages to respond to the environment, activating
+functions, making changes, and capturing state information.
+ In this task, you will create a real-time notification that informs you when an
+instance is Stopped or Terminated.
+Review the Real-Time Notification Configuration
+ In addition to receiving an email, you can configure Amazon Simple Notification
+Service (SNS) to send you a notification to your phone via SMS.
+Task 5: Monitor for Infrastructure Compliance
+ AWS Config is a service that enables you to assess, audit, and evaluate the
+configurations of your AWS resources.
+ Config continuously monitors and records your AWS resource configurations and
+allows you to automate the evaluation of recorded configurations against desired
+configurations.
+5. Suppose the cafe business application's web server is compromised by an unauthorized
+user within the account, who adds a new rule to the security group and updates images
+of the web application. The client expresses the need to audit actions performed on
+resources to identify vulnerabilities and details. How would you approach auditing
+these actions, and what steps would you propose to prevent similar unauthorized
+access in the future?
+o Configure an AWS CloudTrail trail.
+o Analyze CloudTrail logs by using various methods to discover relevant information.
+o Import AWS CloudTrail log data into Amazon Athena.
+o Run queries in Amazon Athena to filter AWS CloudTrail log entries.
+o Resolve security concerns within the AWS account and on an EC2 Linux instance.
+Task 1: Modify a security group and observe the website
+ Choose the EC2 instance ie., Cafe Web Server instance and select the Security tab
+below and then choose WebSecurityGroup.
+ Choose Edit inbound rules, then choose Add Rule and configure the rule as follows:
+o Port Range: 22
+o Source: My IP
+ Observe the Café website: http://<WebServerIP>/mompopcafe/
+Task 2: Create an AWS CloudTrail log and observe the hacked website
+Create an AWS CloudTrail log:
+ Configure the trail Choose trail attributes, set the Trail name as Monitor
+ Storage location: Create a new S3 bucket
+ Create trail.
+Observe the hacked website:
+ Return to the browser tab where you have the Café website open and refresh the page.
+Task 3: Analyse the CloudTrail Logs by using grep
+Connect to the Cafe Web Server host EC2 instance by using SSH:
+o chmod 400 labsuser.pem
+o ssh -I labsuser.pem ec2-user@<public-ip>
+Analyze the logs by using grep:
+Analyze the logs by using AWS CLI cloudtrail commands:
+Task 4: Analyse the CloudTrail logs by using Amazon Athena
+ It can be difficult to find specific information within a very large dataset.
+ Athena is an interactive query service that makes it easy to analyse data in Amazon
+Simple Storage Service (Amazon S3) by using standard SQL.
+Create the Amazon Athena table:
+Analyse logs using Athena:
+ The advantage of using Athena is that you can now run SQL queries over your log
+data.
+Task 5: Further Analysis of the Hack and Improving Security
+ Secure both your AWS account, and the web server instance.
+ Check the OS users & Update SSH security.
+6. The cafe business client wishes to update their website with new recipes, images, and
+videos. They have hired an external media company to create these images and videos.
+The client requires a secure file sharing mechanism to transfer data from the external
+company to the business owner. Additionally, they want to be notified immediately
+when images are added, updated, or deleted. As a cloud operations engineer, propose a
+solution to meet the business's needs.
+ Use the s3api and s3 AWS CLI commands to create and configure an Amazon S3
+bucket.
+ Configure an Amazon S3 bucket for file sharing with an external user.
+ Secure an Amazon S3 bucket for different access requirements by using Amazon S3
+permissions.
+ Configure event notification on an Amazon S3 bucket.
+Task 1: Connect to the AWS CLI Host instance by using SSH
+Configure the AWS CLI on the CLI Host EC2 Instance
+Task 2: Create and initialize the Amazon S3 share bucket
+ Use the AWS s3 CLI to create the Amazon S3 share bucket and initialize it with some
+images
+ Then list the bucket contents to verify the success of your actions.
+Task 3: Review the media company user and permissions
+ The user provides a way for the media company to use the AWS Management
+Console or the AWS CLI to upload and modify images in the S3 share bucket.
+ Review the permissions that the mompopuser and mediacouser users have been
+granted to access the S3 bucket.
+Review the mompopuser IAM User & mediaco IAM Group:
+Review the mediacouser IAM User:
+Test the mediacouser permissions:
+ In the browser tab in incognito, paste the URL, browse to
+https://aws.amazon.com/console/
+ In the Sign in page, enter the following details,choose IAM user.
+o For Account ID or alias, Account ID
+o For IAM username, enter mediacouser
+o For Password, enter Training1!
+o Choose Sign in
+ Goto S3, choose the mompopcafe-xxxnnn link, where xxxnnn corresponds to your
+bucket's unique name.
+ Choose the images link.
+ See the list of images that were uploaded when you initialized the bucket in Task 2.
+ Test the view use case. Choose and open Donuts.jpg.
+Task 4: Configure event notifications on the Amazon S3 share bucket
+ Configure the Amazon S3 share bucket to generate an event notification to an Amazon SNS
+topic whenever the bucket's contents change.
+ The topic then sends an email message to its subscribed users with the notification message.
+Create and configure the s3NotificationTopic:
+ Subscribe Pop to the topic as the mompopuser who will receive the event notifications from
+the S3 share bucket.
+ Choose Create subscription, the topic ARN box, the s3NotificationTopic already
+appears.
+ In the Protocol menu, select Email, enter an email address that you can access.
+ Open the email message and choose Confirm subscription.
+Add an event notification configuration to the S3 bucket:
+ Create an event notification configuration file that identifies the events that Amazon
+S3 will publish and the topic destination where Amazon S3 will send the event
+notifications.
+ Then use the s3api CLI to associate this configuration file with the Amazon S3 share
+bucket.
+ Associate the event configuration file with the S3 share bucket.
+ Wait a few moments and then check the inbox for the email address that you used
+to subscribe to the topic.
+ See an email message with the subject Amazon S3 Notification.
+Task 5: Test the Amazon S3 share bucket event notifications
+ Test the configuration of the S3 share bucket event notification by performing the use
+cases that the mediacouser expects to perform on the bucket.
+ These actions include putting and deleting objects in the bucket, which should
+generate email notifications to Pop.
